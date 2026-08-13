@@ -89,7 +89,7 @@ func (m *memRepo) Delete(_ context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func setupRouter(t *testing.T) (*gin.Engine, domain.UserService, domain.TokenIssuer) {
+func setupRouter(t *testing.T) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 
@@ -108,11 +108,11 @@ func setupRouter(t *testing.T) (*gin.Engine, domain.UserService, domain.TokenIss
 		Health:  httpadapter.NewHealthHandler(nil),
 		Env:     "test",
 	})
-	return r, svc, tokens
+	return r
 }
 
 func TestRegisterLoginAndCRUD(t *testing.T) {
-	r, _, _ := setupRouter(t)
+	r := setupRouter(t)
 
 	body := map[string]string{
 		"email": "carol@example.com", "name": "Carol", "password": "password123",
@@ -168,7 +168,7 @@ func TestRegisterLoginAndCRUD(t *testing.T) {
 }
 
 func TestHealthz(t *testing.T) {
-	r, _, _ := setupRouter(t)
+	r := setupRouter(t)
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	r.ServeHTTP(w, req)
