@@ -1,0 +1,107 @@
+{
+  "family": "go-hexagonal-starter",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/go-hexagonal-starter:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8085,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "APP_ENV", "value": "production" },
+        { "name": "APP_PORT", "value": "8085" },
+        { "name": "LOG_LEVEL", "value": "info" },
+        { "name": "OTEL_SERVICE_NAME", "value": "go-hexagonal-starter" },
+        { "name": "SERVICE_VERSION", "value": "1.0.0" },
+        { "name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "http://localhost:4317" },
+        { "name": "OTEL_TRACES_SAMPLER_ARG", "value": "0.1" },
+        { "name": "DB_HOST", "value": "YOUR_RDS_ENDPOINT" },
+        { "name": "DB_PORT", "value": "5432" },
+        { "name": "DB_NAME", "value": "go_hexagonal" },
+        { "name": "DB_SSLMODE", "value": "require" },
+        { "name": "DB_USER", "value": "postgres" },
+        { "name": "JWT_ISSUER", "value": "go-hexagonal-starter" },
+        { "name": "JWT_EXPIRY", "value": "24h" },
+        { "name": "MIGRATIONS_PATH", "value": "file:///app/migrations" }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:go-hexagonal/db-password"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:go-hexagonal/jwt-secret"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/go-hexagonal-starter",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "dependsOn": [
+        {
+          "containerName": "otel-collector",
+          "condition": "START"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://127.0.0.1:8085/healthz || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      }
+    },
+    {
+      "name": "otel-collector",
+      "image": "public.ecr.aws/aws-observability/aws-otel-collector:v0.41.2",
+      "essential": false,
+      "command": ["--config", "env:AOT_CONFIG_CONTENT"],
+      "environment": [
+        {
+          "name": "AOT_CONFIG_CONTENT",
+          "value": "receivers:\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:4318\nprocessors:\n  batch:\n    timeout: 1s\n  memory_limiter:\n    check_interval: 5s\n    limit_mib: 128\nexporters:\n  otlp:\n    endpoint: ${OTEL_BACKEND_ENDPOINT}\n    headers:\n      authorization: Bearer ${OTEL_BACKEND_TOKEN}\n    tls:\n      insecure: false\n  logging:\n    loglevel: info\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlp, logging]\n"
+        },
+        { "name": "OTEL_BACKEND_ENDPOINT", "value": "YOUR_TEMPO_OR_GRAFANA_CLOUD_OTLP_ENDPOINT:443" }
+      ],
+      "secrets": [
+        {
+          "name": "OTEL_BACKEND_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:go-hexagonal/otel-backend-token"
+        }
+      ],
+      "portMappings": [
+        {
+          "containerPort": 4317,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 4318,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/go-hexagonal-starter",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "otel"
+        }
+      }
+    }
+  ]
+}

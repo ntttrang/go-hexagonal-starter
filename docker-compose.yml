@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: go_hexagonal
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d go_hexagonal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8085:8085"
+    environment:
+      APP_ENV: development
+      APP_PORT: "8085"
+      LOG_LEVEL: info
+      OTEL_SERVICE_NAME: go-hexagonal-starter
+      SERVICE_VERSION: "1.0.0"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: go_hexagonal
+      DB_SSLMODE: disable
+      JWT_SECRET: local-dev-secret-change-me
+      JWT_ISSUER: go-hexagonal-starter
+      JWT_EXPIRY: 24h
+      MIGRATIONS_PATH: file:///app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8085/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  pgdata:

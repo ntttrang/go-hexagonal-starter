@@ -1,0 +1,9 @@
+swagger: "2.0"
+info:
+  description: Production-ready Go microservice using Hexagonal Architecture.
+  title: Go Hexagonal Starter API
+  contact: {}
+  version: "1.0"
+host: localhost:8085
+basePath: /
+paths: {}
