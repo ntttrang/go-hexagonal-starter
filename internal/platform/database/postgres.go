@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres" // registers the PostgreSQL driver for golang-migrate
+	_ "github.com/golang-migrate/migrate/v4/source/file"       // registers the file source for golang-migrate
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/nttttranggo-hexagonal-starter/internal/platform/config"
@@ -47,7 +47,7 @@ func RunMigrations(cfg *config.Config, log *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("migrate up: %w", err)

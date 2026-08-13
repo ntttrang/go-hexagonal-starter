@@ -37,7 +37,7 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 		INSERT INTO users (id, email, name, password_hash, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)`
 
-	ctx, span := startDBSpan(ctx, "INSERT", "users", q)
+	ctx, span := startDBSpan(ctx, "INSERT", q)
 	defer span.End()
 
 	_, err := r.pool.Exec(ctx, q,
@@ -81,7 +81,7 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]domain.
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2`
 
-	ctx, span := startDBSpan(ctx, "SELECT", "users", q)
+	ctx, span := startDBSpan(ctx, "SELECT", q)
 	defer span.End()
 
 	rows, err := r.pool.Query(ctx, q, limit, offset)
@@ -115,7 +115,7 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 		SET email = $2, name = $3, updated_at = $4
 		WHERE id = $1`
 
-	ctx, span := startDBSpan(ctx, "UPDATE", "users", q)
+	ctx, span := startDBSpan(ctx, "UPDATE", q)
 	defer span.End()
 
 	tag, err := r.pool.Exec(ctx, q, user.ID, user.Email, user.Name, user.UpdatedAt)
@@ -140,7 +140,7 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	const q = `DELETE FROM users WHERE id = $1`
 
-	ctx, span := startDBSpan(ctx, "DELETE", "users", q)
+	ctx, span := startDBSpan(ctx, "DELETE", q)
 	defer span.End()
 
 	tag, err := r.pool.Exec(ctx, q, id)
@@ -161,7 +161,7 @@ func (r *UserRepository) Ping(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	ctx, span := startDBSpan(ctx, "PING", "users", "SELECT 1")
+	ctx, span := startDBSpan(ctx, "PING", "SELECT 1")
 	defer span.End()
 
 	err := r.pool.Ping(ctx)
@@ -170,7 +170,7 @@ func (r *UserRepository) Ping(ctx context.Context) error {
 }
 
 func (r *UserRepository) scanOne(ctx context.Context, op, q string, arg any) (*domain.User, error) {
-	ctx, span := startDBSpan(ctx, op, "users", q)
+	ctx, span := startDBSpan(ctx, op, q)
 	defer span.End()
 
 	var u domain.User
@@ -188,13 +188,13 @@ func (r *UserRepository) scanOne(ctx context.Context, op, q string, arg any) (*d
 	return &u, nil
 }
 
-func startDBSpan(ctx context.Context, operation, table, statement string) (context.Context, trace.Span) {
-	return otel.Tracer(tracerName).Start(ctx, "db."+operation+" "+table,
+func startDBSpan(ctx context.Context, operation, statement string) (context.Context, trace.Span) {
+	return otel.Tracer(tracerName).Start(ctx, "db."+operation+" users",
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(
 			semconv.DBSystemPostgreSQL,
 			semconv.DBOperation(operation),
-			attribute.String("db.collection.name", table),
+			attribute.String("db.collection.name", "users"),
 			semconv.DBStatement(truncateSQL(statement)),
 		),
 	)

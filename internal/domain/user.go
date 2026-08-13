@@ -9,10 +9,15 @@ import (
 )
 
 var (
-	ErrNotFound          = errors.New("not found")
-	ErrConflict          = errors.New("conflict")
-	ErrInvalidInput      = errors.New("invalid input")
-	ErrUnauthorized      = errors.New("unauthorized")
+	// ErrNotFound is returned when a requested entity does not exist.
+	ErrNotFound = errors.New("not found")
+	// ErrConflict is returned on a duplicate or unique-constraint violation.
+	ErrConflict = errors.New("conflict")
+	// ErrInvalidInput is returned when request data fails validation.
+	ErrInvalidInput = errors.New("invalid input")
+	// ErrUnauthorized is returned when authentication is missing or invalid.
+	ErrUnauthorized = errors.New("unauthorized")
+	// ErrInvalidCredentials is returned when login credentials do not match.
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
