@@ -3,7 +3,7 @@ MODULE := github.com/nttttranggo-hexagonal-starter
 BIN := bin/api
 GO ?= go
 
-.PHONY: help tidy build run test test-integration lint gosec govulncheck trivy swag migrate-up migrate-down up down logs docker-build
+.PHONY: help tidy build run test test-integration lint gosec govulncheck trivy swag migrate-up migrate-down up down logs docker-build loadtest
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -55,3 +55,6 @@ logs: ## Tail app logs
 
 docker-build: ## Build Docker image
 	docker build -t $(APP_NAME):local .
+
+loadtest: ## Run k6 load test against the API (set BASE_URL, K6_VUS, RUN_ID)
+	k6 run scripts/loadtest.js
