@@ -1,0 +1,41 @@
+name: pr-description-check
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-description-check:
+    name: pr-description-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          sparse-checkout: .github
+
+      - name: Validate PR description follows template
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -eu
+          if [ ! -f .github/PULL_REQUEST_TEMPLATE.md ]; then
+            echo "::error::.github/PULL_REQUEST_TEMPLATE.md not found on the base branch"
+            exit 1
+          fi
+          body="${PR_BODY:-}"
+          missing=0
+          while IFS= read -r heading; do
+            if ! printf '%s' "$body" | grep -qF -- "$heading"; then
+              echo "::error::PR description is missing required section: ${heading}"
+              missing=1
+            fi
+          done < <(grep -E '^##[[:space:]]' .github/PULL_REQUEST_TEMPLATE.md)
+          if [ "${missing}" -ne 0 ]; then
+            echo "Fill the required sections from .github/PULL_REQUEST_TEMPLATE.md and the check will re-run."
+            exit 1
+          fi
+          echo "PR description contains all required template sections."
