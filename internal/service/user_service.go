@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -20,15 +21,25 @@ type UserService struct {
 	tokens  domain.TokenIssuer
 	ttl     time.Duration
 	metrics *metrics.Metrics
+	log     *slog.Logger
 }
 
-// NewUserService constructs a UserService. metrics may be nil.
-func NewUserService(repo domain.UserRepository, tokens domain.TokenIssuer, ttl time.Duration, m *metrics.Metrics) *UserService {
-	return &UserService{repo: repo, tokens: tokens, ttl: ttl, metrics: m}
+// NewUserService constructs a UserService. metrics may be nil; a nil log falls back to a discard logger.
+func NewUserService(repo domain.UserRepository, tokens domain.TokenIssuer, ttl time.Duration, m *metrics.Metrics, log *slog.Logger) *UserService {
+	if log == nil {
+		log = slog.New(slog.DiscardHandler)
+	}
+	return &UserService{repo: repo, tokens: tokens, ttl: ttl, metrics: m, log: log}
 }
 
 // Register creates a new user with a hashed password.
-func (s *UserService) Register(ctx context.Context, in domain.RegisterInput) (*domain.User, error) {
+func (s *UserService) Register(ctx context.Context, in domain.RegisterInput) (user *domain.User, err error) {
+	start := time.Now()
+	s.log.InfoContext(ctx, "Register START", "email", in.Email)
+	defer func() {
+		s.log.InfoContext(ctx, "Register END", "took", time.Since(start), "err", err)
+	}()
+
 	if err := domain.ValidateRegister(in); err != nil {
 		s.incUserOp("register", "invalid")
 		return nil, err
@@ -53,7 +64,7 @@ func (s *UserService) Register(ctx context.Context, in domain.RegisterInput) (*d
 	}
 
 	now := time.Now().UTC()
-	user := &domain.User{
+	user = &domain.User{
 		ID:           uuid.New(),
 		Email:        email,
 		Name:         name,

@@ -98,7 +98,7 @@ func run() error {
 
 	tokens := authadapter.NewJWTIssuer(cfg.JWTSecret, cfg.JWTIssuer)
 	repo := postgres.NewUserRepository(pool)
-	userSvc := service.NewUserService(repo, tokens, cfg.JWTExpiry, m)
+	userSvc := service.NewUserService(repo, tokens, cfg.JWTExpiry, m, log)
 
 	router := httpadapter.NewRouter(httpadapter.Dependencies{
 		Log:         log,
