@@ -100,6 +100,18 @@ Then point the app at the collector via `OTEL_EXPORTER_OTLP_ENDPOINT` (the overl
 
 Leave `OTEL_EXPORTER_OTLP_ENDPOINT` unset to keep tracing off.
 
+### Generating traffic to verify dashboards
+
+[`scripts/loadtest.js`](scripts/loadtest.js) drives the API with [k6](https://k6.io) to populate all three pillars (metrics, logs, traces) so you can confirm the dashboards are wired end-to-end. With the IaC observability stack running and `make up` for the app:
+
+```bash
+brew install k6                      # macOS; see k6 docs for other platforms
+make loadtest                        # ~2 min, ramps to 20 VUs
+K6_VUS=50 RUN_ID=2 BASE_URL=http://localhost:8085 make loadtest   # overrides
+```
+
+Then check the RED + Logs dashboard in Grafana, or run the Prometheus / Loki / Tempo queries above.
+
 ## Local development
 
 Requirements: Go 1.25+, Docker, (optional) golangci-lint, swag, migrate CLI.

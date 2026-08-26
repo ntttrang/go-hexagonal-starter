@@ -25,7 +25,7 @@ services:
       LOG_LEVEL: info
       OTEL_SERVICE_NAME: go-hexagonal-starter
       SERVICE_VERSION: "1.0.0"
-      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
       OTEL_TRACES_SAMPLER_ARG: "1.0"
       DB_HOST: postgres
       DB_PORT: "5432"
@@ -46,6 +46,27 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - default
+      - obs-net
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres:5432/go_hexagonal?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+      - obs-net
 
 volumes:
   pgdata:
+
+networks:
+  obs-net:
+    external: true

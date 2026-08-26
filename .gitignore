@@ -31,3 +31,8 @@ vendor/
 dist/
 tmp/
 .golangci.cache/
+
+# AI
+.claude
+.agentkit
+plans/

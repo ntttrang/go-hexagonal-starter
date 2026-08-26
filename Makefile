@@ -3,7 +3,13 @@ MODULE := github.com/nttttranggo-hexagonal-starter
 BIN := bin/api
 GO ?= go
 
-.PHONY: help tidy build run test test-integration lint gosec govulncheck trivy swag migrate-up migrate-down up down logs docker-build
+# k6 load testing
+K6 ?= k6
+BASE_URL ?= http://localhost:8085
+LOADTEST_VUS ?= 20
+LOADTEST_DURATION ?= 30s
+
+.PHONY: help tidy build run test test-integration lint gosec govulncheck trivy swag migrate-up migrate-down up down logs docker-build loadtest loadtest-health loadtest-register loadtest-users
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
@@ -55,3 +61,14 @@ logs: ## Tail app logs
 
 docker-build: ## Build Docker image
 	docker build -t $(APP_NAME):local .
+
+loadtest: loadtest-health ## Run k6 load test (override BASE_URL, LOADTEST_VUS, LOADTEST_DURATION)
+
+loadtest-health: ## Smoke load test against /healthz
+	$(K6) run -e BASE_URL=$(BASE_URL) --vus $(LOADTEST_VUS) --duration $(LOADTEST_DURATION) loadtest/healthz.js
+
+loadtest-register: ## Load test POST /api/v1/auth/register (requires DB up)
+	$(K6) run -e BASE_URL=$(BASE_URL) loadtest/register.js
+
+loadtest-users: ## Authenticated load test: login then GET /api/v1/users (requires DB up)
+	$(K6) run -e BASE_URL=$(BASE_URL) --vus $(LOADTEST_VUS) --duration $(LOADTEST_DURATION) loadtest/users.js
