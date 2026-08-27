@@ -103,7 +103,7 @@ func (m *mockTokens) Parse(token string) (*domain.TokenClaims, error) {
 }
 
 func TestRegisterAndAuthenticate(t *testing.T) {
-	svc := service.NewUserService(newMockRepo(), &mockTokens{}, time.Hour, nil)
+	svc := service.NewUserService(newMockRepo(), &mockTokens{}, time.Hour, nil, nil)
 
 	user, err := svc.Register(context.Background(), domain.RegisterInput{
 		Email:    "Alice@Example.com",
@@ -132,7 +132,7 @@ func TestRegisterAndAuthenticate(t *testing.T) {
 }
 
 func TestRegisterValidation(t *testing.T) {
-	svc := service.NewUserService(newMockRepo(), &mockTokens{}, time.Hour, nil)
+	svc := service.NewUserService(newMockRepo(), &mockTokens{}, time.Hour, nil, nil)
 
 	_, err := svc.Register(context.Background(), domain.RegisterInput{
 		Email: "bad", Name: "A", Password: "short",
@@ -142,7 +142,7 @@ func TestRegisterValidation(t *testing.T) {
 
 func TestUpdateAndDelete(t *testing.T) {
 	repo := newMockRepo()
-	svc := service.NewUserService(repo, &mockTokens{}, time.Hour, nil)
+	svc := service.NewUserService(repo, &mockTokens{}, time.Hour, nil, nil)
 
 	user, err := svc.Register(context.Background(), domain.RegisterInput{
 		Email: "bob@example.com", Name: "Bob", Password: "password123",

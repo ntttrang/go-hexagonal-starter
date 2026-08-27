@@ -95,7 +95,7 @@ func setupRouter(t *testing.T) *gin.Engine {
 
 	tokens := authadapter.NewJWTIssuer("test-secret-at-least-16-chars", "test")
 	repo := newMemRepo()
-	svc := service.NewUserService(repo, tokens, time.Hour, nil)
+	svc := service.NewUserService(repo, tokens, time.Hour, nil, nil)
 	log := logger.New("error")
 	m := metrics.New()
 
