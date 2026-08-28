@@ -1,5 +1,5 @@
 # Go Hexagonal Starter
-![Go Hexagonal Starter - CI](https://github.com/ntttrang/docs/actions/workflows/ci.yml/badge.svg?branch=develop)
+![Go Hexagonal Starter - CI](https://github.com/ntttrang/go-hexagonal-starter/actions/workflows/ci.yml/badge.svg?branch=develop)
 
 Production-ready Go microservice using **Hexagonal Architecture** (Ports & Adapters), Gin, PostgreSQL, JWT auth, Swagger, structured logging, Prometheus metrics, and OpenTelemetry tracing.
 
